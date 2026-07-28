@@ -18,9 +18,10 @@ Iceberg 테이블을 **처음부터** 만드는 전체 흐름을 익힙니다.
 ## 실행 전 준비
 
 1. 프로젝트 루트에서 `.env` 설정 (HMS, HiveServer2, Impala, Ozone warehouse)
-2. **Ozone volume·bucket**이 없으면 먼저 생성 — [`docs/04-ozone-storage.md`](../../docs/04-ozone-storage.md) §1; **Ranger `cm_ozone`** — 같은 문서 **§3**
-3. Kerberos가 필요한 클러스터면 `kinit` 등으로 로그인
-4. (데이터 Lab) 합성 Parquet — [`synthetic-data/README.md`](../../synthetic-data/README.md) (`python3` 필수)
+2. **Ozone volume·bucket**이 없으면 먼저 생성 — [`docs/04-ozone-storage.md`](../../docs/04-ozone-storage.md) §1; **Ranger `cm_ozone`** — §3
+3. **Spark 3 CLI** — `spark3-sql` 이 PATH에 없으면 `run.sh`가 `spark-env.sh`를 source; 안 되면 [`docs/03-cloudera-integration.md`](../../docs/03-cloudera-integration.md) Spark 절
+4. Kerberos가 필요한 클러스터면 `kinit` 등으로 로그인
+5. (데이터 Lab) 합성 Parquet — [`synthetic-data/README.md`](../../synthetic-data/README.md) (`python3` 필수)
 
 ## 실행 방법
 
