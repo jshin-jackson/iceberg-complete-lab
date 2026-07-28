@@ -62,8 +62,9 @@ def main():
         }
     )
 
-    order_dates = pd.to_datetime("2020-01-01") + pd.to_timedelta(
-        rng.integers(0, 365 * 6, args.rows_orders), unit="D"
+    order_dates = pd.Series(
+        pd.to_datetime("2020-01-01")
+        + pd.to_timedelta(rng.integers(0, 365 * 6, args.rows_orders), unit="D")
     )
     customer_ids = rng.integers(1, args.rows_customers + 1, args.rows_orders)
     product_ids = rng.integers(1, args.rows_products + 1, args.rows_orders)
@@ -73,8 +74,9 @@ def main():
 
     reg_map = customers.set_index("customer_id")["registration_date"]
     for i, cid in enumerate(customer_ids):
-        if order_dates[i] < reg_map[cid]:
-            order_dates[i] = reg_map[cid] + pd.Timedelta(days=1)
+        reg = reg_map[cid]
+        if order_dates.iat[i] < reg:
+            order_dates.iat[i] = reg + pd.Timedelta(days=1)
 
     orders = pd.DataFrame(
         {
