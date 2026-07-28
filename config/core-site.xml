@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!-- CDP 7.3.2 — CM에서 동일 키 확인. Ozone Service ID 고정 -->
+<configuration>
+  <property>
+    <name>fs.defaultFS</name>
+    <value>ofs://ozone1784520717</value>
+  </property>
+  <property>
+    <name>fs.ofs.impl</name>
+    <value>org.apache.hadoop.fs.ozone.RootedOzoneFileSystem</value>
+  </property>
+  <property>
+    <name>fs.AbstractFileSystem.ofs.impl</name>
+    <value>org.apache.hadoop.fs.ozone.RootedOzFs</value>
+  </property>
+  <property>
+    <name>ozone.service.id</name>
+    <value>ozone1784520717</value>
+  </property>
+</configuration>

@@ -1,0 +1,2 @@
+-iceberg_catalog_resolution_mode=auto
+-iceberg_enable_column_stats=true

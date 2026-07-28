@@ -1,0 +1,8 @@
+.env
+*.keytab
+__pycache__/
+*.pyc
+.venv/
+synthetic-data/samples/*.parquet
+reports/
+/tmp/

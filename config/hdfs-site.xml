@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<configuration>
+  <property>
+    <name>dfs.client.block.write.locateFollowingBlock.retries</name>
+    <value>5</value>
+    <description>Ozone/HDFS 클라이언트 재시도</description>
+  </property>
+</configuration>

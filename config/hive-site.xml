@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<configuration>
+  <property>
+    <name>iceberg.engine.hive.enabled</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>hive.vectorized.execution.enabled</name>
+    <value>true</value>
+  </property>
+</configuration>

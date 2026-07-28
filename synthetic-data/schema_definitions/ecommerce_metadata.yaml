@@ -1,0 +1,15 @@
+# customers / products / orders — Lab 스키마 참고용
+tables:
+  customers:
+    primary_key: customer_id
+  products:
+    primary_key: product_id
+  orders:
+    primary_key: order_id
+relationships:
+  - parent: customers
+    child: orders
+    fk: customer_id
+  - parent: products
+    child: orders
+    fk: product_id
