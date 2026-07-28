@@ -9,7 +9,15 @@ echo "== Kerberos =="
 klist || { echo "kinit 실패"; exit 1; }
 
 echo "== Spark =="
-spark3-sql --version 2>&1 | head -1 || true
+# shellcheck disable=SC1091
+source "${ROOT}/labs/common/spark_sql_env.sh"
+source_spark_environment
+if SPARK_SQL="$(resolve_spark_sql_cmd 2>/dev/null)"; then
+  echo "Spark SQL CLI: ${SPARK_SQL}"
+  "${SPARK_SQL}" --version 2>&1 | head -1 || true
+else
+  echo "[WARN] spark3-sql / spark-sql 없음 — source /etc/spark3/conf*/spark-env.sh 또는 .env SPARK_SQL_CMD"
+fi
 
 echo "== Hive Metastore =="
 if [[ "${HMS_URI:-}" == *REPLACE* || -z "${HMS_URI:-}" ]]; then

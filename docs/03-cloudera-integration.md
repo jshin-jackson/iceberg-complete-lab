@@ -50,6 +50,33 @@ SSL 없는 환경만 `IMPALA_SSL=false` 로 두면 `--ssl` / `--ca_cert` 를 붙
 
 ---
 
+## Spark 3 SQL (`spark3-sql`)
+
+Lab Spark 실습은 [`labs/common/run_spark_sql.sh`](../labs/common/run_spark_sql.sh)가 **Iceberg catalog conf**와 함께 CLI를 호출합니다.
+
+CDP **edge**에서는 `spark3-sql` 이 PATH에 없을 수 있습니다. **`run.sh` / `run_spark_sql.sh`는 다음을 자동 시도**합니다.
+
+1. `.env`의 `SPARK_ENV_SCRIPT` 또는 `/etc/spark3/conf.cloudera.spark3_on_yarn/spark-env.sh` 등 **source**
+2. `SPARK_SQL_CMD` → `spark3-sql` → `spark-sql` → `/opt/cloudera/parcels/SPARK3/bin/spark3-sql`
+
+수동 확인:
+
+```bash
+source /etc/spark3/conf.cloudera.spark3_on_yarn/spark-env.sh   # 경로는 CM/parcel 버전마다 다를 수 있음
+which spark3-sql
+spark3-sql --version
+```
+
+| `.env` | 설명 |
+|--------|------|
+| `SPARK_MASTER` | 기본 `yarn` (Lab Iceberg 쓰기) |
+| `SPARK_SQL_CMD` | CLI 전체 경로 (자동 탐색 실패 시) |
+| `SPARK_ENV_SCRIPT` | `spark-env.sh` 위치 (자동 후보 외 지정) |
+
+ `./scripts/validate.sh`의 Spark 줄에서 CLI 경로를 확인할 수 있습니다.
+
+---
+
 ## Hive Metastore (HMS)
 
 Iceberg 테이블 메타는 **Hive Metastore** Thrift API(`9083`)에 저장됩니다. 이 클러스터는 **HMS 2대**가 동시에 기동 중입니다.
