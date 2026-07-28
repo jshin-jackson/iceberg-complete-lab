@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Spark 3 client 진단 (edge에서 실행)
-set -euo pipefail
+set -eo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 # shellcheck disable=SC1091
 source "${ROOT}/labs/common/spark_sql_env.sh"

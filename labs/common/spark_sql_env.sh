@@ -4,6 +4,18 @@
 
 SPARK_SQL_MAIN_CLASS="${SPARK_SQL_MAIN_CLASS:-org.apache.spark.sql.hive.thriftserver.SparkSQLCLIDriver}"
 
+# CDP load-spark-env.sh 등은 set -u 셸에서 unset 변수를 참조할 수 있음
+_safe_source_spark_file() {
+  local f="$1"
+  local had_u=0
+  case "$-" in *u*) had_u=1; set +u ;; esac
+  # load-spark-env.sh (CDH) line ~30
+  export SPARK_ENV_LOADED="${SPARK_ENV_LOADED-}"
+  # shellcheck disable=SC1090
+  source "${f}"
+  if [[ "${had_u}" -eq 1 ]]; then set -u; fi
+}
+
 _spark_sql_bin_dirs() {
   local d
   if [[ -n "${SPARK_HOME:-}" && -d "${SPARK_HOME}/bin" ]]; then
@@ -44,8 +56,7 @@ source_spark_environment() {
     return 0
   fi
   if [[ -n "${SPARK_ENV_SCRIPT:-}" && -f "${SPARK_ENV_SCRIPT}" ]]; then
-    # shellcheck disable=SC1090
-    source "${SPARK_ENV_SCRIPT}"
+    _safe_source_spark_file "${SPARK_ENV_SCRIPT}"
     export SPARK_ENV_SOURCED=1
     return 0
   fi
@@ -55,8 +66,7 @@ source_spark_environment() {
     /opt/cloudera/parcels/CDH/lib/spark3/bin/load-spark-env.sh \
     /opt/cloudera/parcels/spark3/bin/load-spark-env.sh; do
     if [[ -f "${f}" ]]; then
-      # shellcheck disable=SC1090
-      source "${f}"
+      _safe_source_spark_file "${f}"
       break
     fi
   done
@@ -64,7 +74,7 @@ source_spark_environment() {
   shopt -s nullglob
   for f in /etc/spark3/conf*/spark-env.sh; do
     if [[ -f "${f}" ]]; then
-      source "${f}"
+      _safe_source_spark_file "${f}"
       break
     fi
   done
@@ -74,7 +84,7 @@ source_spark_environment() {
     /opt/cloudera/parcels/CDH/lib/spark3/bin/spark-config.sh \
     /opt/cloudera/parcels/spark3/bin/spark-config.sh; do
     if [[ -f "${f}" ]]; then
-      source "${f}"
+      _safe_source_spark_file "${f}"
       break
     fi
   done

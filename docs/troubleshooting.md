@@ -15,3 +15,4 @@
 13. **warehouse REPLACE** — `.env`의 `WAREHOUSE_OFS` 실제 vol/bucket으로 변경
 14. **generate_ecommerce SyntaxError (f-string)** — `python` 이 2.x; **`python3`** 또는 `./scripts/generate_synthetic_data.sh` — [`synthetic-data/README.md`](../synthetic-data/README.md)
 15. **spark3-sql / spark-sql 없음** — CDH bin 에 `spark-class` 만 있음 → `git pull` 후 `./run.sh` (자동 `SparkSQLCLIDriver`); `.env` 에 잘못된 `SPARK_SQL_CMD` 제거; `./scripts/detect_spark_client.sh`
+16. **load-spark-env SPARK_ENV_LOADED unbound** — Lab 스크립트가 `set -u` 없이 source 함; `git pull` 후 재시도
