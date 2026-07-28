@@ -9,13 +9,15 @@ echo "== PATH (spark 관련) =="
 echo "${PATH}" | tr ':' '\n' | grep -E 'spark|Spark' || echo "(spark 경로 없음)"
 
 echo ""
-echo "== SPARK_HOME =="
-echo "${SPARK_HOME:-(unset)}"
+echo "== SPARK_HOME / SPARK_CONF_DIR (source 전) =="
+echo "SPARK_HOME=${SPARK_HOME:-(unset)}"
+echo "SPARK_CONF_DIR=${SPARK_CONF_DIR:-(unset)}"
 
 echo ""
 echo "== source_spark_environment =="
 source_spark_environment
 echo "SPARK_HOME=${SPARK_HOME:-(unset)}"
+echo "SPARK_CONF_DIR=${SPARK_CONF_DIR:-(unset)}"
 
 echo ""
 echo "== which =="
@@ -53,14 +55,13 @@ ls -d /etc/spark3/conf* 2>/dev/null || echo "(없음)"
 echo ""
 if SPARK_SQL="$(resolve_spark_sql_cmd 2>/dev/null)"; then
   echo "resolve_spark_sql_cmd OK: ${SPARK_SQL}"
-  if [[ "${SPARK_SQL}" != spark-class:* ]]; then
-    "${SPARK_SQL}" --version 2>&1 | head -3 || true
-  elif sc="$(_spark_class_bin 2>/dev/null)"; then
-    "${sc}" "${SPARK_SQL_MAIN_CLASS}" --version 2>&1 | head -3 || true
+  submit="$(_spark_submit_bin 2>/dev/null || true)"
+  if [[ -n "${submit}" ]]; then
+    "${submit}" --version 2>&1 | head -3 || true
   fi
 else
   echo "resolve_spark_sql_cmd FAILED"
 fi
 
 echo ""
-echo "Lab 실행: run_spark_sql.sh → spark-sql 없으면 spark-class ${SPARK_SQL_MAIN_CLASS}"
+echo "Lab: run_spark_sql.sh → spark-sql | spark-submit SparkSQLCLIDriver | PySpark runner"

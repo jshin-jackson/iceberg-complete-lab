@@ -60,7 +60,8 @@ edge `/opt/cloudera/parcels/CDH/lib/spark3/bin` 에 **`spark-sql` / `spark3-sql`
 
 1. `load-spark-env.sh` (CDH) · `/etc/spark3/conf*/spark-env.sh` source
 2. `spark3-sql` / `spark-sql` 이 있으면 해당 CLI
-3. 없으면 **`spark-class org.apache.spark.sql.hive.thriftserver.SparkSQLCLIDriver -f …`**
+3. 없으면 **`spark-submit`** + driver classpath → `SparkSQLCLIDriver`, 실패 시 **`spark_sql_file_runner.py`** (PySpark)
+4. **`SPARK_CONF_DIR`** = `/etc/spark3/conf.cloudera.SPARK3_ON_YARN*` 자동 설정
 
 진단:
 
