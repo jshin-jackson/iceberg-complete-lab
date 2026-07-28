@@ -18,8 +18,9 @@ Iceberg 테이블을 **처음부터** 만드는 전체 흐름을 익힙니다.
 ## 실행 전 준비
 
 1. 프로젝트 루트에서 `.env` 설정 (HMS, HiveServer2, Impala, Ozone warehouse)
-2. Kerberos가 필요한 클러스터면 `kinit` 등으로 로그인
-3. (데이터 Lab) `synthetic-data`로 고객·주문 Parquet 생성 — Lab SQL/README 상단 안내 확인
+2. **Ozone volume·bucket**이 없으면 먼저 생성 — [`docs/04-ozone-storage.md`](../../docs/04-ozone-storage.md) §1; **Ranger `cm_ozone`** — 같은 문서 **§3**
+3. Kerberos가 필요한 클러스터면 `kinit` 등으로 로그인
+4. (데이터 Lab) `synthetic-data`로 고객·주문 Parquet 생성 — Lab SQL/README 상단 안내 확인
 
 ## 실행 방법
 

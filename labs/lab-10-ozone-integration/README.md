@@ -11,8 +11,8 @@ Iceberg **데이터 파일**과 **메타데이터 파일**은 “warehouse”라
 
 ### 초급자 체크리스트
 
-1. **테이블 LOCATION / warehouse** — Iceberg가 실제 Parquet·메타 JSON을 쓰는 곳
-2. **Ozone volume·bucket** — 조직에서 정한 네임스페이스 (`.env`의 `OZONE_*`)
+1. **Ozone volume·bucket** — Lab 01 **이전**에 생성되어 있어야 합니다. 아직 없다면 [`docs/04-ozone-storage.md`](../../docs/04-ozone-storage.md) 또는 `./scripts/setup_ozone_storage.sh --check` 를 따르세요.
+2. **테이블 LOCATION / warehouse** — Iceberg가 실제 Parquet·메타 JSON을 쓰는 곳 (`.env`의 `WAREHOUSE_OFS`)
 3. **3엔진 모두** 같은 warehouse를 바라보도록 Spark/Hive/Impala 설정이 맞아야 Lab 01~09가 성공합니다
 
 이 Lab은 “Iceberg 기능”보다 **저장소가 Ozone일 때 테이블이 어디에 있는지**를 **DESCRIBE·COUNT**로 확인합니다.
@@ -41,4 +41,4 @@ cd labs/lab-10-ozone-integration
 
 ## 더 읽기
 
-프로젝트 `docs/04-ozone-storage.md` — Ozone과 Iceberg warehouse 개념을 더 정리해 두었을 수 있습니다.
+[`docs/04-ozone-storage.md`](../../docs/04-ozone-storage.md) — volume/bucket 생성, **Ranger `cm_ozone` 정책(§3)**, warehouse mkdir, `.env` 맞추기

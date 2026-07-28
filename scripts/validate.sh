@@ -25,4 +25,16 @@ else
   echo "Impala OK: ${IMPALA_DAEMON}"
 fi
 
+echo "== Ozone warehouse =="
+WH="${WAREHOUSE_OFS:-${WAREHOUSE:-}}"
+if [[ -z "${WH}" || "${WH}" == *REPLACE* ]]; then
+  echo "[WARN] WAREHOUSE_OFS 를 .env 에 설정하세요"
+elif hdfs dfs -test -d "${WH}" 2>/dev/null; then
+  echo "warehouse OK: ${WH}"
+else
+  echo "[WARN] warehouse 경로가 없거나 접근 불가: ${WH}"
+  echo "       volume/bucket 생성: docs/04-ozone-storage.md"
+  echo "       또는: ./scripts/setup_ozone_storage.sh --check"
+fi
+
 echo "validate.sh: 기본 검증 완료"

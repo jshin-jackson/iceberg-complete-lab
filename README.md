@@ -33,7 +33,24 @@ cp .env.example .env
 # .env 파일을 열어 REPLACE_* 자리를 실제 호스트로 바꿉니다.
 ```
 
-### 2. 연결 확인
+### 2. Ozone volume·bucket·warehouse 준비 (최초 1회)
+
+Iceberg 파일은 Ozone **`ofs://`** 경로에 저장됩니다. **volume과 bucket이 아직 없다면** Lab 01 전에 만들어야 합니다.
+
+- **가이드 (CLI·UI·권한·`.env` 맞추기):** [`docs/04-ozone-storage.md`](docs/04-ozone-storage.md)  
+  **Ranger가 켜져 있으면** 같은 문서 **§3**에서 **`cm_ozone` 정책** 추가 (volume/bucket/`warehouse` prefix, `systest` Read/Write/Create/Delete/List)
+- **edge에서 빠른 확인/생성:**
+
+  ```bash
+  kinit -kt /cdep/keytabs/systest.keytab systest@QE-INFRA-AD.CLOUDERA.COM   # 예시
+  ./scripts/setup_ozone_storage.sh --check    # 없으면 가이드 안내
+  ./scripts/setup_ozone_storage.sh --apply    # 권한 있을 때 volume/bucket/warehouse 생성
+  # Ranger Admin → OZONE (cm_ozone) → Add Policy — docs/04-ozone-storage.md §3
+  ```
+
+`.env`의 `OZONE_VOLUME`, `OZONE_BUCKET`, `WAREHOUSE_OFS`는 **실제로 만든 이름·경로**와 같아야 합니다.
+
+### 3. 연결 확인
 
 ```bash
 ./scripts/validate.sh
@@ -41,7 +58,7 @@ cp .env.example .env
 
 Kerberos(`kinit`) 등이 필요하면 Lab 공통 스크립트 안내를 따릅니다.
 
-### 3. (선택) 합성 데이터 만들기
+### 4. (선택) 합성 데이터 만들기
 
 일부 Lab은 미리 만든 Parquet 데이터를 사용합니다.
 

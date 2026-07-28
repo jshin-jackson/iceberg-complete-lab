@@ -1,7 +1,7 @@
 # 트러블슈팅
 
 1. **kinit 실패** — keytab 경로 `/cdep/keytabs/systest.keytab`, principal 대소문자 확인
-2. **ofs 접근 거부** — Ozone volume/bucket `.env` 수정, Ranger Ozone 정책
+2. **ofs 접근 거부 / warehouse 없음** — volume·bucket·warehouse: [`04-ozone-storage.md`](04-ozone-storage.md) §1; **Ranger 거부** — 같은 문서 **§3** (`cm_ozone` Audits, user·key prefix), `./scripts/setup_ozone_storage.sh --check`
 3. **Beeline 연결 실패** — `HIVE_SERVER2_JDBC` principal `hive/_HOST@REALM`
 4. **Impala 테이블 없음** — `INVALIDATE METADATA` / `REFRESH db.table`
 5. **Spark catalog not found** — `ICEBERG_CATALOG=hive_prod`, extensions 설정
