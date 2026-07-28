@@ -1,7 +1,17 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """이커머스 합성 데이터 (pandas) — Iceberg Lab 적재용 Parquet."""
 import argparse
+import sys
 from pathlib import Path
+
+if sys.version_info < (3, 8):
+    sys.exit(
+        "Python 3.8+ 가 필요합니다 (현재: {}.{})".format(
+            sys.version_info[0], sys.version_info[1]
+        )
+        + ". edge에서 python3 generators/generate_ecommerce_data.py 로 실행하세요."
+    )
 
 import numpy as np
 import pandas as pd

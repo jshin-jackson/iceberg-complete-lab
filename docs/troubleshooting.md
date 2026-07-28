@@ -13,3 +13,4 @@
 11. **COUNT 불일치** — Lab 순서(01→…) 지키고 동일 `iceberg_lab` DB 사용
 12. **Kerberos ticket 만료** — `kinit -kt ...` 재실행
 13. **warehouse REPLACE** — `.env`의 `WAREHOUSE_OFS` 실제 vol/bucket으로 변경
+14. **generate_ecommerce SyntaxError (f-string)** — `python` 이 2.x; **`python3`** 또는 `./scripts/generate_synthetic_data.sh` — [`synthetic-data/README.md`](../synthetic-data/README.md)

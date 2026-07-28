@@ -62,12 +62,13 @@ Kerberos(`kinit`) 등이 필요하면 Lab 공통 스크립트 안내를 따릅�
 
 ### 4. (선택) 합성 데이터 만들기
 
-일부 Lab은 미리 만든 Parquet 데이터를 사용합니다.
-
 ```bash
-cd synthetic-data && pip install -r requirements.txt
-python generators/generate_ecommerce_data.py --rows-customers 1000 --rows-orders 5000
+cd ~/iceberg-complete-lab
+./scripts/generate_synthetic_data.sh --rows-customers 1000 --rows-orders 5000
 ```
+
+또는 `synthetic-data/` 안에서 **`python3`** 로 실행 (자세한 경로: [`synthetic-data/README.md`](synthetic-data/README.md)).  
+`python` 이 2.x 이면 `SyntaxError: invalid syntax` 가 납니다 — **`python3` 사용**.
 
 ## Lab 진행 순서
 
