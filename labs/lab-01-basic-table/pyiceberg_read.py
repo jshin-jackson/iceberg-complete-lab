@@ -6,7 +6,7 @@ catalog = load_catalog(
     "hive_prod",
     **{
         "type": "hive",
-        "uri": "thrift://REPLACE_HMS_HOST:9083",
+        "uri": "thrift://ccycloud-1.jshin.root.comops.site:9083,thrift://ccycloud-3.jshin.root.comops.site:9083",
         "warehouse": "ofs://ozone1784520717/vol1/bucket1/warehouse",
     },
 )

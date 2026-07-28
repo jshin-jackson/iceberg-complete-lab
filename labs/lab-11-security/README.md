@@ -22,8 +22,18 @@
 | `IMPALA_DAEMON` | Impala coordinator **`host:25003`** (SSL; 21000 아님) |
 | `IMPALA_SSL` / `IMPALA_CA_CERT` | `--ssl`, CM `cm-auto-global_cacerts.pem` |
 | `IMPALA_PROTOCOL` | Lab 기본 `beeswax` ([`docs/03-cloudera-integration.md`](../../docs/03-cloudera-integration.md)) |
+| `HMS_URI` | Metastore Thrift **2대** (`9083`, 쉼표 구분) |
+| `HIVESERVER2_LOAD_BALANCER` | HS2 **`ccycloud-1...:10015`** |
+| `HIVE_SERVER2_PRINCIPAL` / SSL | Beeline Kerberos + `sslTrustStore` |
 
-수동 접속 예:
+수동 Beeline 예:
+
+```bash
+kinit -kt /cdep/keytabs/systest.keytab systest
+beeline -u "jdbc:hive2://ccycloud-1.jshin.root.comops.site:10015/default;principal=hive/ccycloud-1.jshin.root.comops.site@QE-INFRA-AD.CLOUDERA.COM;ssl=true;sslTrustStore=/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_truststore.jks;trustStorePassword=YOUR_PASSWORD"
+```
+
+수동 Impala 예:
 
 ```bash
 kinit -kt /cdep/keytabs/systest.keytab systest
@@ -31,7 +41,7 @@ impala-shell -i ccycloud-5.jshin.root.comops.site:25003 --protocol=beeswax -d de
   --ssl --ca_cert=/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_cacerts.pem
 ```
 
-Lab SQL은 `env.sh` + [`run_impala_sql.sh`](../../common/run_impala_sql.sh)가 위와 같은 `.env`(`IMPALA_*`) 옵션으로 실행합니다.
+Lab SQL은 `env.sh` + [`run_hive_sql.sh`](../../common/run_hive_sql.sh) / [`run_impala_sql.sh`](../../common/run_impala_sql.sh)가 `.env` 옵션으로 실행합니다.
 
 ## 실행 방법
 

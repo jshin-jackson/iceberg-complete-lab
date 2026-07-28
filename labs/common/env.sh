@@ -17,6 +17,7 @@ fi
 export LAB_DATABASE="${LAB_DATABASE:-iceberg_lab}"
 export ICEBERG_CATALOG="${ICEBERG_CATALOG:-hive_prod}"
 export WAREHOUSE="${WAREHOUSE_OFS:-ofs://ozone1784520717/vol1/bucket1/warehouse}"
+export HMS_URI="${HMS_URI:-thrift://ccycloud-1.jshin.root.comops.site:9083,thrift://ccycloud-3.jshin.root.comops.site:9083}"
 
 if [[ -n "${KERBEROS_KEYTAB:-}" && -n "${KERBEROS_PRINCIPAL:-}" ]]; then
   kinit -kt "${KERBEROS_KEYTAB}" "${KERBEROS_PRINCIPAL}" 2>/dev/null || klist -s || kinit -kt "${KERBEROS_KEYTAB}" "${KERBEROS_PRINCIPAL}"

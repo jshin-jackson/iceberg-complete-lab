@@ -11,11 +11,28 @@ klist || { echo "kinit 실패"; exit 1; }
 echo "== Spark =="
 spark3-sql --version 2>&1 | head -1 || true
 
-echo "== Beeline (JDBC 설정 확인) =="
-if [[ "${HIVE_SERVER2_JDBC}" == *REPLACE* ]]; then
-  echo "[WARN] HIVE_SERVER2_JDBC 를 .env 에 설정하세요"
+echo "== Hive Metastore =="
+if [[ "${HMS_URI:-}" == *REPLACE* || -z "${HMS_URI:-}" ]]; then
+  echo "[WARN] HMS_URI 를 .env 에 설정하세요 (thrift://host1:9083,thrift://host2:9083)"
 else
-  echo "JDBC OK: ${HIVE_SERVER2_JDBC}"
+  echo "HMS_URI OK: ${HMS_URI}"
+fi
+
+echo "== Beeline (HiveServer2) =="
+if [[ "${HIVE_SERVER2_JDBC:-}" == *REPLACE* ]]; then
+  echo "[WARN] HIVE_SERVER2_JDBC 또는 HIVESERVER2_LOAD_BALANCER + HIVE_SERVER2_PRINCIPAL 을 .env 에 설정하세요"
+else
+  HS2_SHOW="${HIVESERVER2_LOAD_BALANCER:-${HIVE_SERVER2_JDBC#jdbc:hive2://}}"
+  HS2_SHOW="${HS2_SHOW%%/*}"
+  echo "HiveServer2: ${HS2_SHOW} ssl=${HIVE_SERVER2_SSL:-true} principal=${HIVE_SERVER2_PRINCIPAL:-(JDBC 내장)}"
+  if [[ "${HIVE_SERVER2_SSL:-true}" == "true" ]]; then
+    TS="${HIVE_SSL_TRUSTSTORE:-/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_truststore.jks}"
+    if [[ -f "${TS}" ]]; then
+      echo "  truststore OK: ${TS}"
+    else
+      echo "[WARN] HIVE_SSL_TRUSTSTORE 파일 없음: ${TS}"
+    fi
+  fi
 fi
 
 echo "== Impala =="
