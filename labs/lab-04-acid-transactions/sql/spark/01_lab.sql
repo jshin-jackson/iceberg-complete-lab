@@ -7,4 +7,4 @@ MERGE INTO merge_demo t USING upserts s ON t.id = s.id
  WHEN MATCHED THEN UPDATE SET val = s.val
  WHEN NOT MATCHED THEN INSERT *;
 SELECT * FROM merge_demo ORDER BY id;
-SELECT COUNT(*) FROM merge_demo.snapshots;
+SELECT COUNT(*) FROM iceberg_lab.merge_demo.snapshots;

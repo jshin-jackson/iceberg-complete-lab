@@ -10,4 +10,4 @@ INSERT INTO customers VALUES
  (1, 'Alice', 'a@ex.com', timestamp '2021-01-01', 'KR', 30, 'F', true),
  (2, 'Bob', 'b@ex.com', timestamp '2021-06-01', 'US', 40, 'M', false);
 SELECT * FROM customers;
-SELECT * FROM customers.snapshots;
+SELECT * FROM iceberg_lab.customers.snapshots;

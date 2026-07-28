@@ -61,7 +61,7 @@ LABS_SPEC = [
             " (1, 'Alice', 'a@ex.com', timestamp '2021-01-01', 'KR', 30, 'F', true),",
             " (2, 'Bob', 'b@ex.com', timestamp '2021-06-01', 'US', 40, 'M', false);",
             "SELECT * FROM customers;",
-            "SELECT * FROM customers.snapshots;",
+            "SELECT * FROM iceberg_lab.customers.snapshots;",
         ],
         "hive": [
             f"USE {DB};",
@@ -151,7 +151,7 @@ LABS_SPEC = [
             " WHEN MATCHED THEN UPDATE SET val = s.val",
             " WHEN NOT MATCHED THEN INSERT *;",
             "SELECT * FROM merge_demo ORDER BY id;",
-            "SELECT COUNT(*) FROM merge_demo.snapshots;",
+            "SELECT COUNT(*) FROM iceberg_lab.merge_demo.snapshots;",
         ],
         "hive": [
             f"USE {DB};",
@@ -176,7 +176,7 @@ LABS_SPEC = [
             f"USE {DB};",
             "INSERT INTO merge_demo VALUES (3, 'v3');",
             "SELECT * FROM merge_demo;",
-            "SELECT snapshot_id, committed_at FROM merge_demo.snapshots ORDER BY committed_at DESC LIMIT 3;",
+            "SELECT snapshot_id, committed_at FROM iceberg_lab.merge_demo.snapshots ORDER BY committed_at DESC LIMIT 3;",
             "CREATE TAG IF NOT EXISTS tag_lab05 ON TABLE merge_demo;",
         ],
         "hive": [
@@ -247,7 +247,7 @@ LABS_SPEC = [
         "spark": [
             f"USE {DB};",
             "CALL hive_prod.system.expire_snapshots(table => 'iceberg_lab.merge_demo', older_than => TIMESTAMP '2099-01-01 00:00:00', retain_last => 1);",
-            "SELECT COUNT(*) FROM merge_demo.snapshots;",
+            "SELECT COUNT(*) FROM iceberg_lab.merge_demo.snapshots;",
         ],
         "hive": [f"USE {DB};", "SELECT COUNT(*) FROM merge_demo;"],
         "impala": [f"USE {DB};", "SELECT COUNT(*) FROM merge_demo;"],
