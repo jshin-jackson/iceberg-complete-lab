@@ -50,30 +50,34 @@ SSL 없는 환경만 `IMPALA_SSL=false` 로 두면 `--ssl` / `--ca_cert` 를 붙
 
 ---
 
-## Spark 3 SQL (`spark3-sql`)
+## Spark 3 SQL (CDH parcel: `spark-class` fallback)
 
-Lab Spark 실습은 [`labs/common/run_spark_sql.sh`](../labs/common/run_spark_sql.sh)가 **Iceberg catalog conf**와 함께 CLI를 호출합니다.
+Lab Spark 실습은 [`labs/common/run_spark_sql.sh`](../labs/common/run_spark_sql.sh)가 **Iceberg catalog conf**와 함께 SQL 파일을 제출합니다.
 
-CDP **edge**에서는 `spark3-sql` 이 PATH에 없을 수 있습니다. **`run.sh` / `run_spark_sql.sh`는 다음을 자동 시도**합니다.
+edge `/opt/cloudera/parcels/CDH/lib/spark3/bin` 에 **`spark-sql` / `spark3-sql` 이 없고** `spark-class`, `load-spark-env.sh`, `spark-submit` 만 있는 구성이 있습니다.
 
-1. `.env`의 `SPARK_ENV_SCRIPT` 또는 `/etc/spark3/conf.cloudera.spark3_on_yarn/spark-env.sh` 등 **source**
-2. `SPARK_SQL_CMD` → `spark3-sql` → `spark-sql` → `/opt/cloudera/parcels/SPARK3/bin/spark3-sql`
+**`run_spark_sql.sh` 자동 동작:**
 
-수동 확인:
+1. `load-spark-env.sh` (CDH) · `/etc/spark3/conf*/spark-env.sh` source
+2. `spark3-sql` / `spark-sql` 이 있으면 해당 CLI
+3. 없으면 **`spark-class org.apache.spark.sql.hive.thriftserver.SparkSQLCLIDriver -f …`**
+
+진단:
 
 ```bash
-source /etc/spark3/conf.cloudera.spark3_on_yarn/spark-env.sh   # 경로는 CM/parcel 버전마다 다를 수 있음
-which spark3-sql
-spark3-sql --version
+./scripts/detect_spark_client.sh
+ls -l /opt/cloudera/parcels/CDH/lib/spark3/bin
 ```
+
+`.env`: 없는 경로의 **`SPARK_SQL_CMD=.../spark-sql` 을 제거**하세요 (자동 fallback 사용).
 
 | `.env` | 설명 |
 |--------|------|
-| `SPARK_MASTER` | 기본 `yarn` (Lab Iceberg 쓰기) |
-| `SPARK_SQL_CMD` | CLI 전체 경로 (자동 탐색 실패 시) |
-| `SPARK_ENV_SCRIPT` | `spark-env.sh` 위치 (자동 후보 외 지정) |
+| `SPARK_MASTER` | 기본 `yarn` |
+| `SPARK_SQL_CMD` | (선택) 실제 존재하는 CLI만 |
+| `SPARK_SQL_MAIN_CLASS` | fallback (기본 `SparkSQLCLIDriver`) |
 
- `./scripts/validate.sh`의 Spark 줄에서 CLI 경로를 확인할 수 있습니다.
+ `./scripts/validate.sh` Spark 줄에서 runner 확인.
 
 ---
 

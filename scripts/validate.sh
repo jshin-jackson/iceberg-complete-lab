@@ -13,10 +13,12 @@ echo "== Spark =="
 source "${ROOT}/labs/common/spark_sql_env.sh"
 source_spark_environment
 if SPARK_SQL="$(resolve_spark_sql_cmd 2>/dev/null)"; then
-  echo "Spark SQL CLI: ${SPARK_SQL}"
-  "${SPARK_SQL}" --version 2>&1 | head -1 || true
+  echo "Spark SQL runner: ${SPARK_SQL}"
+  if [[ "${SPARK_SQL}" != spark-class:* ]]; then
+    "${SPARK_SQL}" --version 2>&1 | head -1 || true
+  fi
 else
-  echo "[WARN] spark3-sql / spark-sql 없음 — source /etc/spark3/conf*/spark-env.sh 또는 .env SPARK_SQL_CMD"
+  echo "[WARN] Spark SQL CLI 없음 — ./scripts/detect_spark_client.sh"
 fi
 
 echo "== Hive Metastore =="
