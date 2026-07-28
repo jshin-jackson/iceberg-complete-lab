@@ -19,8 +19,19 @@
 | `KERBEROS_PRINCIPAL` | 사용자 principal (예: `systest@...`) |
 | `KERBEROS_KEYTAB` | keytab 파일 경로 |
 | `SPARK_YARN_*` | Spark on YARN 제출 시 사용하는 principal/keytab |
+| `IMPALA_DAEMON` | Impala coordinator **`host:25003`** (SSL; 21000 아님) |
+| `IMPALA_SSL` / `IMPALA_CA_CERT` | `--ssl`, CM `cm-auto-global_cacerts.pem` |
+| `IMPALA_PROTOCOL` | Lab 기본 `beeswax` ([`docs/03-cloudera-integration.md`](../../docs/03-cloudera-integration.md)) |
 
-Lab 공통 `env.sh`가 이 값을 읽어 JDBC·beeline·impala-shell 호출에 넘깁니다.
+수동 접속 예:
+
+```bash
+kinit -kt /cdep/keytabs/systest.keytab systest
+impala-shell -i ccycloud-5.jshin.root.comops.site:25003 --protocol=beeswax -d default -k \
+  --ssl --ca_cert=/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_cacerts.pem
+```
+
+Lab SQL은 `env.sh` + [`run_impala_sql.sh`](../../common/run_impala_sql.sh)가 위와 같은 `.env`(`IMPALA_*`) 옵션으로 실행합니다.
 
 ## 실행 방법
 

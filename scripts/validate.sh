@@ -20,9 +20,18 @@ fi
 
 echo "== Impala =="
 if [[ "${IMPALA_DAEMON}" == *REPLACE* ]]; then
-  echo "[WARN] IMPALA_DAEMON 을 .env 에 설정하세요"
+  echo "[WARN] IMPALA_DAEMON 을 .env 에 설정하세요 (예: coordinator:25003)"
 else
-  echo "Impala OK: ${IMPALA_DAEMON}"
+  echo "Impala daemon: ${IMPALA_DAEMON}"
+  echo "  protocol=${IMPALA_PROTOCOL:-beeswax} ssl=${IMPALA_SSL:-true} db=${IMPALA_DEFAULT_DATABASE:-${LAB_DATABASE:-default}}"
+  if [[ "${IMPALA_SSL:-true}" == "true" ]]; then
+    CERT="${IMPALA_CA_CERT:-/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_cacerts.pem}"
+    if [[ -f "${CERT}" ]]; then
+      echo "  ca_cert OK: ${CERT}"
+    else
+      echo "[WARN] IMPALA_CA_CERT 파일 없음: ${CERT}"
+    fi
+  fi
 fi
 
 echo "== Ozone warehouse =="
