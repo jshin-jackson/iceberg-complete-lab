@@ -63,8 +63,8 @@ echo ""
 echo "== JDBC URL (조립) =="
 JDBC="$(build_hive_jdbc)"
 echo "$(mask_hive_jdbc_for_log "${JDBC}")"
-if [[ "${JDBC}" != *auth=KERBEROS* ]]; then
-  echo "[WARN] URL에 auth=KERBEROS 없음 — principal만으로는 Broken pipe/reset 가능" >&2
+if [[ "${JDBC}" != *auth=KERBEROS* && "${HIVE_SERVER2_ENSURE_KERBEROS_AUTH:-false}" == "true" ]]; then
+  echo "[WARN] HIVE_SERVER2_ENSURE_KERBEROS_AUTH=true 인데 URL에 auth=KERBEROS 없음" >&2
 fi
 if [[ "${JDBC}" != *serviceDiscoveryMode=zooKeeper* ]]; then
   if [[ -n "${HIVE_ZK_QUORUM:-}" && "${HIVE_SERVER2_CONNECT:-zk}" == "zk" ]]; then

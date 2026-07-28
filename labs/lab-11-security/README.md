@@ -30,8 +30,8 @@
 
 ```bash
 kinit -kt /cdep/keytabs/systest.keytab systest
-./scripts/test_beeline_connect.sh
-# 또는 labs/common/run_hive_sql.sh 가 .env JDBC 사용
+./scripts/beeline.sh
+# 또는 ./scripts/test_beeline_connect.sh
 ```
 
 수동 Impala 예:

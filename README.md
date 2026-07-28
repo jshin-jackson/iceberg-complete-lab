@@ -32,7 +32,7 @@ Cloudera Data Platform(CDP) **7.3.2**, Iceberg **1.5.2**, Spark **3.5.4** 환경
 cp .env.example .env
 # .env 파일을 열어 REPLACE_* 자리를 실제 호스트로 바꿉니다.
 # Impala: coordinator SSL 포트(예: 25003) — docs/03-cloudera-integration.md
-# Hive: HMS_URI, Beeline ZK JDBC (HIVE_ZK_QUORUM) — docs/03-cloudera-integration.md Beeline 절
+# Hive: HMS_URI, Beeline — ./scripts/beeline.sh (CM ZK JDBC) — docs/03-cloudera-integration.md
 ```
 
 ### 2. Ozone volume·bucket·warehouse 준비 (최초 1회)
