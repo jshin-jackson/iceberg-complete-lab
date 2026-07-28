@@ -91,7 +91,7 @@ beeline -u "jdbc:hive2://ccycloud-1.jshin.root.comops.site:10015/default;princip
 **SSL** (truststore 경로·비밀번호는 CM/agent 쪽 설정 확인):
 
 ```bash
-beeline -u "jdbc:hive2://ccycloud-1.jshin.root.comops.site:10015/default;ssl=true;sslTrustStore=/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_truststore.jks;trustStorePassword=YOUR_PASSWORD;principal=hive/ccycloud-1.jshin.root.comops.site@QE-INFRA-AD.CLOUDERA.COM"
+beeline -u "jdbc:hive2://ccycloud-1.jshin.root.comops.site:10015/default;ssl=true;sslTrustStore=/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_truststore.jks;trustStorePassword=changeit;principal=hive/ccycloud-1.jshin.root.comops.site@QE-INFRA-AD.CLOUDERA.COM"
 ```
 
 Kerberos + SSL을 **한 URL**에 넣는 것이 CDP edge에서 흔한 패턴입니다. Lab `.env`의 `HIVE_SERVER2_JDBC` 또는 `HIVESERVER2_*` / `HIVE_SSL_*` 가 [`run_hive_sql.sh`](../labs/common/run_hive_sql.sh)에서 조립됩니다.
@@ -101,7 +101,7 @@ Kerberos + SSL을 **한 URL**에 넣는 것이 CDP edge에서 흔한 패턴입�
 | Load balancer | `HIVESERVER2_LOAD_BALANCER=ccycloud-1.jshin.root.comops.site:10015` |
 | HMS URIs | `HMS_URI` (2대 thrift) |
 | HS2 principal | `HIVE_SERVER2_PRINCIPAL=hive/<hs2-host-fqdn>@REALM` |
-| SSL | `HIVE_SERVER2_SSL=true`, `HIVE_SSL_TRUSTSTORE`, `HIVE_SSL_TRUSTSTORE_PASSWORD` |
+| SSL | `HIVE_SERVER2_SSL=true`, `HIVE_SSL_TRUSTSTORE`, `HIVE_SSL_TRUSTSTORE_PASSWORD=changeit` (CM `cm-auto-global_truststore.jks`) |
 | 전체 JDBC | `HIVE_SERVER2_JDBC` (있으면 우선) |
 
 **Principal 참고:** 문서 예시 `hive/localhost@mydomain.com` 과 같이 **`hive/_HOST@REALM` 이 아니라 접속 URL 호스트와 같은 FQDN** 을 쓰는 경우가 많습니다. 연결 오류 시 CM HiveServer2 **Principal** 필드와 Beeline URL host 가 일치하는지 확인하세요.

@@ -24,10 +24,8 @@ build_hive_jdbc() {
   url="jdbc:hive2://${host}:${port}/${db};principal=${principal}"
   if [[ "${HIVE_SERVER2_SSL:-true}" == "true" ]]; then
     ts="${HIVE_SSL_TRUSTSTORE:-/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_truststore.jks}"
-    url="${url};ssl=true;sslTrustStore=${ts}"
-    if [[ -n "${HIVE_SSL_TRUSTSTORE_PASSWORD:-}" ]]; then
-      url="${url};trustStorePassword=${HIVE_SSL_TRUSTSTORE_PASSWORD}"
-    fi
+    pwd="${HIVE_SSL_TRUSTSTORE_PASSWORD:-changeit}"
+    url="${url};ssl=true;sslTrustStore=${ts};trustStorePassword=${pwd}"
   fi
   printf '%s' "${url}"
 }
