@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """PyIceberg HMS 조회 예제 (선택)."""
 from pyiceberg.catalog import load_catalog
 

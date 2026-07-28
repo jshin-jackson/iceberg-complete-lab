@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """Lab 디렉터리·검증 SQL·run.sh 생성 (bootstrap)."""
 from pathlib import Path
 

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """이커머스 합성 데이터 (pandas) — Iceberg Lab 적재용 Parquet."""
 import argparse
 from pathlib import Path
