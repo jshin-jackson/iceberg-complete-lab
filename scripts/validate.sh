@@ -43,12 +43,18 @@ else
 fi
 
 echo "== Beeline (HiveServer2) =="
-if [[ "${HIVE_SERVER2_JDBC:-}" == *REPLACE* ]]; then
-  echo "[WARN] HIVE_SERVER2_JDBC 또는 HIVESERVER2_LOAD_BALANCER + HIVE_SERVER2_PRINCIPAL 을 .env 에 설정하세요"
+# shellcheck disable=SC1091
+source "${ROOT}/labs/common/hive_jdbc.sh"
+if [[ "${HIVE_SERVER2_JDBC:-}" == *REPLACE* && -z "${HIVE_ZK_QUORUM:-}" && -z "${HIVESERVER2_LOAD_BALANCER:-}" ]]; then
+  echo "[WARN] HIVE_SERVER2_JDBC, HIVE_ZK_QUORUM, 또는 HIVESERVER2_LOAD_BALANCER 를 .env 에 설정하세요"
 else
-  HS2_SHOW="${HIVESERVER2_LOAD_BALANCER:-${HIVE_SERVER2_JDBC#jdbc:hive2://}}"
-  HS2_SHOW="${HS2_SHOW%%/*}"
-  echo "HiveServer2: ${HS2_SHOW} ssl=${HIVE_SERVER2_SSL:-true} principal=${HIVE_SERVER2_PRINCIPAL:-(JDBC 내장)}"
+  if [[ -n "${HIVE_ZK_QUORUM:-}" ]]; then
+    echo "HiveServer2 (ZK): ${HIVE_ZK_QUORUM} namespace=${HIVE_ZK_NAMESPACE:-hiveserver2}"
+  elif [[ -n "${HIVESERVER2_LOAD_BALANCER:-}" ]]; then
+    echo "HiveServer2 (LB): ${HIVESERVER2_LOAD_BALANCER}"
+  fi
+  echo "  principal=${HIVE_SERVER2_PRINCIPAL:-(JDBC 내장)} ssl=${HIVE_SERVER2_SSL:-true}"
+  echo "  JDBC: $(mask_hive_jdbc_for_log "$(build_hive_jdbc)")"
   if [[ "${HIVE_SERVER2_SSL:-true}" == "true" ]]; then
     TS="${HIVE_SSL_TRUSTSTORE:-/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_truststore.jks}"
     if [[ -f "${TS}" ]]; then

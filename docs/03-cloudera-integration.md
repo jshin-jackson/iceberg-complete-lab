@@ -139,31 +139,26 @@ thrift://ccycloud-1.jshin.root.comops.site:9083,thrift://ccycloud-3.jshin.root.c
 
 Lab의 Hive 검증은 [`labs/common/run_hive_sql.sh`](../labs/common/run_hive_sql.sh) → **beeline** `-f` 로 SQL 파일을 실행합니다.
 
-CM **hiveserver2_load_balancer**:
+이 클러스터는 CM **JDBC URL** 과 같이 **ZooKeeper service discovery** 를 씁니다 (`2181` quorum, `zooKeeperNamespace=hiveserver2`). [`labs/common/hive_jdbc.sh`](../labs/common/hive_jdbc.sh) / [`.env.example`](../.env.example) 가 URL 을 조립합니다.
 
-`ccycloud-1.jshin.root.comops.site:10015`
-
-(예전 문서의 **`10000`** 포트가 아니라, 이 환경에서는 **SSL/load balancer `10015`** 를 사용합니다.)
-
-### 수동 접속 예
-
-**Kerberos + SSL** (CDP edge — `auth=KERBEROS` 를 빼면 **Broken pipe** 가 나는 경우가 많음):
+### 수동 접속 예 (CM JDBC — ZK)
 
 ```bash
 kinit -kt /cdep/keytabs/systest.keytab systest
 klist
-beeline -u "jdbc:hive2://ccycloud-1.jshin.root.comops.site:10015/default;auth=KERBEROS;principal=hive/ccycloud-1.jshin.root.comops.site@QE-INFRA-AD.CLOUDERA.COM;ssl=true;sslTrustStore=/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_truststore.jks;trustStorePassword=<CM truststore 비밀번호>"
+beeline -u "jdbc:hive2://ccycloud-1.jshin.root.comops.site:2181,ccycloud-2.jshin.root.comops.site:2181,ccycloud-3.jshin.root.comops.site:2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2;auth=KERBEROS;principal=hive/_HOST@QE-INFRA-AD.CLOUDERA.COM;ssl=true;trustStoreType=jks;sslTrustStore=/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_truststore.jks;trustStorePassword=Prlcflcy2ZOMhtUqb0GFyd6FXKSTZfMpSU4n7kXtMaG" \
+  -e "SELECT 1;"
 ```
 
-**HTTP transport** (CM `hive.server2.transport.mode=http` 일 때 `transportMode=http` 추가):
+CM UI 에서 복사한 URL 의 `{{CMF_CONF_DIR}}` 는 edge 에서 보통 `/var/lib/cloudera-scm-agent/agent-cert` 입니다. `.env` 의 `HIVE_SERVER2_JDBC` 에 넣거나 `HIVE_ZK_QUORUM` + `HIVE_SERVER2_PRINCIPAL` 로 자동 조립하세요.
+
+**Load balancer 직접 접속** (ZK 대신 `:10015` 테스트):
 
 ```bash
-beeline -u "jdbc:hive2://ccycloud-1.jshin.root.comops.site:10015/default;auth=KERBEROS;principal=hive/ccycloud-1.jshin.root.comops.site@QE-INFRA-AD.CLOUDERA.COM;transportMode=http;httpPath=cliservice;ssl=true;sslTrustStore=/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_truststore.jks;trustStorePassword=<CM truststore 비밀번호>"
+beeline -u "jdbc:hive2://ccycloud-1.jshin.root.comops.site:10015/default;auth=KERBEROS;principal=hive/ccycloud-1.jshin.root.comops.site@QE-INFRA-AD.CLOUDERA.COM;ssl=true;trustStoreType=jks;sslTrustStore=/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_truststore.jks;trustStorePassword=Prlcflcy2ZOMhtUqb0GFyd6FXKSTZfMpSU4n7kXtMaG"
 ```
 
-`trustStorePassword` 는 CM/agent **`cm-auto-global_truststore.jks`** 에 맞는 값입니다 (`changeit` 이 아닐 수 있음). 비밀번호는 `.env` 의 `HIVE_SSL_TRUSTSTORE_PASSWORD` 에만 두고 채팅·쉘 히스토리에 노출하지 마세요.
-
-Kerberos + SSL을 **한 URL**에 넣습니다. Beeline 로그에 `jdbc:hive2://host:10015/default` **만** 보이면 `.env` 의 `HIVE_SERVER2_JDBC` 가 **principal/ssl 없이 짧게** 설정된 것입니다 — [`.env.example`](../.env.example) 전체 URL로 맞추거나 `HIVE_SERVER2_JDBC` 를 지우고 `HIVESERVER2_*` 로 조립하게 하세요.
+`trustStorePassword` 는 CM/agent **`cm-auto-global_truststore.jks`** 에 맞는 값입니다. `.env` 의 `HIVE_SSL_TRUSTSTORE_PASSWORD` 만 사용하고 채팅·히스토리에 노출하지 마세요.
 
 진단:
 
@@ -171,24 +166,21 @@ Kerberos + SSL을 **한 URL**에 넣습니다. Beeline 로그에 `jdbc:hive2://h
 ./scripts/test_beeline_connect.sh
 ```
 
-**Connection reset / Broken pipe** (SSL·principal 을 넣었을 때):
+**Connection reset / Broken pipe**:
 
-- **`auth=KERBEROS`** 가 URL에 있는지 (`principal=` 만으로는 부족)
-- `kinit` + `klist` — ticket 없거나 만료
-- CM **HiveServer2 → Configuration** 에서 transport 가 **HTTP** 이면 `.env` 에  
-  `HIVE_SERVER2_TRANSPORT_MODE=http` · `HIVE_SERVER2_HTTP_PATH=cliservice` (CM 값과 동일)
-- **Kerberos REALM** 이 `HIVE_SERVER2_PRINCIPAL` 의 `@REALM` 과 `klist` 와 일치하는지 확인 (Cloudera CM principal 필드 복사)
-- **trustStorePassword** 가 CM agent truststore 와 일치하는지 (`changeit` 고정 아님)
+- **`auth=KERBEROS`** (`principal=` 만으로는 부족)
+- `kinit` + `klist`
+- ZK URL 인데 **:10015 LB URL** 을 쓰고 있지 않은지
+- **trustStorePassword** 가 CM truststore 와 일치하는지 — `keytool -list -keystore ... -storepass '...'` 로 확인. Beeline **`Keystore was tampered with, or password was incorrect`** 는 **인증서 CN 불일치가 아니라 JKS 비밀번호 오류**(TLS 시작 전 단계)입니다.
 
 | 항목 | `.env` / 값 |
 |------|-------------|
-| Load balancer | `HIVESERVER2_LOAD_BALANCER=ccycloud-1.jshin.root.comops.site:10015` |
-| HMS URIs | `HMS_URI` (2대 thrift) |
-| HS2 principal | `HIVE_SERVER2_PRINCIPAL=hive/<hs2-host-fqdn>@REALM` |
-| SSL | `HIVE_SERVER2_SSL=true`, `HIVE_SSL_TRUSTSTORE`, `HIVE_SSL_TRUSTSTORE_PASSWORD=changeit` (CM `cm-auto-global_truststore.jks`) |
-| 전체 JDBC | `HIVE_SERVER2_JDBC` (있으면 우선) |
+| ZK quorum | `HIVE_ZK_QUORUM=host1:2181,host2:2181,...` |
+| ZK namespace | `HIVE_ZK_NAMESPACE=hiveserver2` |
+| HS2 principal | `HIVE_SERVER2_PRINCIPAL=hive/_HOST@REALM` (CM 필드) |
+| SSL | `HIVE_SSL_TRUSTSTORE`, `HIVE_SSL_TRUSTSTORE_TYPE=jks`, `HIVE_SSL_TRUSTSTORE_PASSWORD` |
+| 전체 JDBC | `HIVE_SERVER2_JDBC` (있으면 우선, `{{CMF_CONF_DIR}}` 확장 지원) |
+| LB (대안) | `HIVESERVER2_LOAD_BALANCER=host:10015` |
 
-**Principal 참고:** 문서 예시 `hive/localhost@mydomain.com` 과 같이 **`hive/_HOST@REALM` 이 아니라 접속 URL 호스트와 같은 FQDN** 을 쓰는 경우가 많습니다. 연결 오류 시 CM HiveServer2 **Principal** 필드와 Beeline URL host 가 일치하는지 확인하세요.
-
-Lab SQL에는 `USE iceberg_lab;` 가 포함되어 있어 JDBC database 는 `default` 로 두어도 됩니다 (`HIVE_SERVER2_JDBC_DATABASE=default`).
+Lab SQL 에 `USE iceberg_lab;` 가 있으므로 JDBC database 는 CM 과 같이 **비워도** 됩니다 (`HIVE_SERVER2_JDBC_DATABASE=`).
 

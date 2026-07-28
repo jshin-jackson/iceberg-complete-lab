@@ -2,7 +2,7 @@
 
 1. **kinit 실패** — keytab 경로 `/cdep/keytabs/systest.keytab`, principal 대소문자 확인
 2. **ofs 접근 거부 / warehouse 없음** — volume·bucket·warehouse: [`04-ozone-storage.md`](04-ozone-storage.md) §1; **Ranger 거부** — 같은 문서 **§3** (`cm_ozone` Audits, user·key prefix), `./scripts/setup_ozone_storage.sh --check`
-3. **Beeline Connection reset / Broken pipe (10015)** — `kinit` + `klist` 후 `./scripts/test_beeline_connect.sh`; JDBC에 **`auth=KERBEROS;principal=...;ssl=...`** (`principal`만이면 Broken pipe); HTTP transport·truststore 비밀번호(CM); [`03-cloudera-integration.md`](03-cloudera-integration.md) Beeline 절
+3. **Beeline Connection reset / Broken pipe** — CM **ZooKeeper JDBC** (`HIVE_ZK_QUORUM`, `serviceDiscoveryMode=zooKeeper`) 또는 `.env` `HIVE_SERVER2_JDBC`; `auth=KERBEROS`; `kinit`+`klist`; truststore 비밀번호; `./scripts/test_beeline_connect.sh`; [`03-cloudera-integration.md`](03-cloudera-integration.md) Beeline 절
 4. **Impala 연결 실패** — `.env`: coordinator **`host:25003`** (21000 아님), `IMPALA_SSL=true`, `IMPALA_CA_CERT` (CM `cm-auto-global_cacerts.pem`), `kinit` 후 [`03-cloudera-integration.md`](03-cloudera-integration.md) Impala 절
 5. **Impala 테이블 없음** — `INVALIDATE METADATA` / `REFRESH db.table`
 6. **Spark catalog not found** — `ICEBERG_CATALOG=hive_prod`, extensions 설정

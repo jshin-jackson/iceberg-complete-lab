@@ -5,6 +5,19 @@ _jdbc_has_kerberos_params() {
   [[ "${1}" == *principal=* ]] || [[ "${1}" == *auth=KERBEROS* ]]
 }
 
+_jdbc_cmf_conf_dir() {
+  printf '%s' "${CMF_CONF_DIR:-${HIVE_CMF_CONF_DIR:-/var/lib/cloudera-scm-agent/agent-cert}}"
+}
+
+# CM UI JDBC 예시의 {{CMF_CONF_DIR}} → edge 실경로
+_jdbc_expand_placeholders() {
+  local u="$1"
+  local cmf
+  cmf="$(_jdbc_cmf_conf_dir)"
+  u="${u//\{\{CMF_CONF_DIR\}\}/${cmf}}"
+  printf '%s' "${u}"
+}
+
 # principal 만 있고 auth=KERBEROS 가 없으면 Beeline 이 Broken pipe 로 끊기는 경우가 많음
 _jdbc_ensure_kerberos_auth() {
   local u="$1"
@@ -14,27 +27,75 @@ _jdbc_ensure_kerberos_auth() {
   printf '%s' "${u}"
 }
 
+_jdbc_append_ssl() {
+  local url="$1"
+  local ts pwd ttype
+  if [[ "${HIVE_SERVER2_SSL:-true}" != "true" ]]; then
+    printf '%s' "${url}"
+    return
+  fi
+  ts="${HIVE_SSL_TRUSTSTORE:-$(_jdbc_cmf_conf_dir)/cm-auto-global_truststore.jks}"
+  pwd="${HIVE_SSL_TRUSTSTORE_PASSWORD:-Prlcflcy2ZOMhtUqb0GFyd6FXKSTZfMpSU4n7kXtMaG}"
+  ttype="${HIVE_SSL_TRUSTSTORE_TYPE:-jks}"
+  printf '%s' "${url};ssl=true;trustStoreType=${ttype};sslTrustStore=${ts};trustStorePassword=${pwd}"
+}
+
+_jdbc_sync_truststore_password() {
+  local u="$1"
+  local pwd="${HIVE_SSL_TRUSTSTORE_PASSWORD:-}"
+  if [[ -n "${pwd}" && "${u}" == *trustStorePassword=* ]]; then
+    echo "${u}" | sed -E "s/trustStorePassword=[^;]*/trustStorePassword=${pwd}/g"
+  else
+    printf '%s' "${u}"
+  fi
+}
+
+_jdbc_finalize() {
+  local u
+  u="$(_jdbc_ensure_kerberos_auth "$(_jdbc_expand_placeholders "$1")")"
+  _jdbc_sync_truststore_password "${u}"
+}
+
 build_hive_jdbc() {
   if [[ -n "${HIVE_SERVER2_JDBC:-}" && "${HIVE_SERVER2_JDBC}" != *REPLACE* ]] \
     && _jdbc_has_kerberos_params "${HIVE_SERVER2_JDBC}"; then
-    _jdbc_ensure_kerberos_auth "${HIVE_SERVER2_JDBC}"
+    _jdbc_finalize "${HIVE_SERVER2_JDBC}"
     return
   fi
 
   if [[ -n "${HIVE_SERVER2_JDBC:-}" && "${HIVE_SERVER2_JDBC}" != *REPLACE* ]]; then
-    echo "[WARN] HIVE_SERVER2_JDBC 에 principal/auth 없음 — HIVESERVER2_* 로 URL 재조립합니다." >&2
+    echo "[WARN] HIVE_SERVER2_JDBC 에 principal/auth 없음 — HIVESERVER2_* / HIVE_ZK_* 로 URL 재조립합니다." >&2
   fi
 
-  local host port db principal url ts pwd transport http_path
+  local db principal url transport http_path quorum zk_ns
+  principal="${HIVE_SERVER2_PRINCIPAL:?HIVE_SERVER2_PRINCIPAL (.env)}"
+
+  if [[ -n "${HIVE_ZK_QUORUM:-}" ]]; then
+    quorum="${HIVE_ZK_QUORUM}"
+    zk_ns="${HIVE_ZK_NAMESPACE:-hiveserver2}"
+    db="${HIVE_SERVER2_JDBC_DATABASE-}"
+    if [[ -z "${db}" ]]; then
+      url="jdbc:hive2://${quorum}/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=${zk_ns};auth=KERBEROS;principal=${principal}"
+    else
+      url="jdbc:hive2://${quorum}/${db};serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=${zk_ns};auth=KERBEROS;principal=${principal}"
+    fi
+    url="$(_jdbc_append_ssl "${url}")"
+    if [[ -n "${HIVE_SERVER2_JDBC_EXTRA:-}" ]]; then
+      url="${url};${HIVE_SERVER2_JDBC_EXTRA}"
+    fi
+    _jdbc_finalize "${url}"
+    return
+  fi
+
+  local host port
   if [[ -n "${HIVESERVER2_LOAD_BALANCER:-}" ]]; then
     host="${HIVESERVER2_LOAD_BALANCER%%:*}"
     port="${HIVESERVER2_LOAD_BALANCER##*:}"
   else
-    host="${HIVESERVER2_HOST:?HIVESERVER2_HOST or HIVESERVER2_LOAD_BALANCER}"
+    host="${HIVESERVER2_HOST:?HIVESERVER2_HOST, HIVESERVER2_LOAD_BALANCER, or HIVE_ZK_QUORUM}"
     port="${HIVESERVER2_PORT:-10015}"
   fi
   db="${HIVE_SERVER2_JDBC_DATABASE:-default}"
-  principal="${HIVE_SERVER2_PRINCIPAL:?HIVE_SERVER2_PRINCIPAL (.env)}"
 
   url="jdbc:hive2://${host}:${port}/${db};auth=KERBEROS;principal=${principal}"
 
@@ -44,17 +105,13 @@ build_hive_jdbc() {
     url="${url};transportMode=http;httpPath=${http_path}"
   fi
 
-  if [[ "${HIVE_SERVER2_SSL:-true}" == "true" ]]; then
-    ts="${HIVE_SSL_TRUSTSTORE:-/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_truststore.jks}"
-    pwd="${HIVE_SSL_TRUSTSTORE_PASSWORD:-changeit}"
-    url="${url};ssl=true;sslTrustStore=${ts};trustStorePassword=${pwd}"
-  fi
+  url="$(_jdbc_append_ssl "${url}")"
 
   if [[ -n "${HIVE_SERVER2_JDBC_EXTRA:-}" ]]; then
     url="${url};${HIVE_SERVER2_JDBC_EXTRA}"
   fi
 
-  _jdbc_ensure_kerberos_auth "${url}"
+  _jdbc_finalize "${url}"
 }
 
 mask_hive_jdbc_for_log() {

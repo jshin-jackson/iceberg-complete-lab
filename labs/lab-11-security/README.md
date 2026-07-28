@@ -23,14 +23,15 @@
 | `IMPALA_SSL` / `IMPALA_CA_CERT` | `--ssl`, CM `cm-auto-global_cacerts.pem` |
 | `IMPALA_PROTOCOL` | Lab 기본 `beeswax` ([`docs/03-cloudera-integration.md`](../../docs/03-cloudera-integration.md)) |
 | `HMS_URI` | Metastore Thrift **2대** (`9083`, 쉼표 구분) |
-| `HIVESERVER2_LOAD_BALANCER` | HS2 **`ccycloud-1...:10015`** |
-| `HIVE_SERVER2_PRINCIPAL` / SSL | Beeline Kerberos + `sslTrustStore` |
+| `HIVE_ZK_QUORUM` / `HIVE_ZK_NAMESPACE` | Beeline **ZooKeeper** HS2 discovery (`2181`, `hiveserver2`) |
+| `HIVE_SERVER2_JDBC` / `HIVE_SERVER2_PRINCIPAL` | CM JDBC (`hive/_HOST@REALM`) + SSL truststore |
 
-수동 Beeline 예:
+수동 Beeline 예 (CM ZK JDBC — [`docs/03-cloudera-integration.md`](../../docs/03-cloudera-integration.md)):
 
 ```bash
 kinit -kt /cdep/keytabs/systest.keytab systest
-beeline -u "jdbc:hive2://ccycloud-1.jshin.root.comops.site:10015/default;principal=hive/ccycloud-1.jshin.root.comops.site@QE-INFRA-AD.CLOUDERA.COM;ssl=true;sslTrustStore=/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_truststore.jks;trustStorePassword=changeit"
+./scripts/test_beeline_connect.sh
+# 또는 labs/common/run_hive_sql.sh 가 .env JDBC 사용
 ```
 
 수동 Impala 예:
