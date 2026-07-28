@@ -56,8 +56,27 @@ _jdbc_finalize() {
   _jdbc_sync_truststore_password "${u}"
 }
 
+# HAProxy LB (:10015) 한 줄 JDBC — CM ZK(2181) 와 다름
+_jdbc_is_haproxy_lb_url() {
+  [[ "${1}" == *":10015/"* || "${1}" == *":10015;"* ]]
+}
+
+_hive_server2_prefer_zk() {
+  [[ "${HIVE_SERVER2_CONNECT:-zk}" == "zk" && -n "${HIVE_ZK_QUORUM:-}" ]]
+}
+
 build_hive_jdbc() {
+  local skip_full_jdbc=false
   if [[ -n "${HIVE_SERVER2_JDBC:-}" && "${HIVE_SERVER2_JDBC}" != *REPLACE* ]] \
+    && _jdbc_is_haproxy_lb_url "${HIVE_SERVER2_JDBC}" \
+    && _hive_server2_prefer_zk; then
+    echo "[WARN] HIVE_SERVER2_JDBC 가 HAProxy :10015 입니다 — HIVE_ZK_QUORUM(CM JDBC) 으로 조립합니다." >&2
+    echo "       LB 고정: HIVE_SERVER2_CONNECT=lb + HIVESERVER2_LOAD_BALANCER (docs/03-cloudera-integration.md HAProxy)" >&2
+    skip_full_jdbc=true
+  fi
+
+  if [[ "${skip_full_jdbc}" != "true" ]] \
+    && [[ -n "${HIVE_SERVER2_JDBC:-}" && "${HIVE_SERVER2_JDBC}" != *REPLACE* ]] \
     && _jdbc_has_kerberos_params "${HIVE_SERVER2_JDBC}"; then
     _jdbc_finalize "${HIVE_SERVER2_JDBC}"
     return
@@ -96,6 +115,9 @@ build_hive_jdbc() {
     port="${HIVESERVER2_PORT:-10015}"
   fi
   db="${HIVE_SERVER2_JDBC_DATABASE:-default}"
+  if [[ "${HIVE_SERVER2_CONNECT:-}" == "lb" && -n "${HIVE_SERVER2_LB_PRINCIPAL:-}" ]]; then
+    principal="${HIVE_SERVER2_LB_PRINCIPAL}"
+  fi
 
   url="jdbc:hive2://${host}:${port}/${db};auth=KERBEROS;principal=${principal}"
 

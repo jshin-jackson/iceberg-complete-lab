@@ -152,11 +152,25 @@ beeline -u "jdbc:hive2://ccycloud-1.jshin.root.comops.site:2181,ccycloud-2.jshin
 
 CM UI 에서 복사한 URL 의 `{{CMF_CONF_DIR}}` 는 edge 에서 보통 `/var/lib/cloudera-scm-agent/agent-cert` 입니다. `.env` 의 `HIVE_SERVER2_JDBC` 에 넣거나 `HIVE_ZK_QUORUM` + `HIVE_SERVER2_PRINCIPAL` 로 자동 조립하세요.
 
-**Load balancer 직접 접속** (ZK 대신 `:10015` 테스트):
+**HAProxy load balancer (`:10015`)** — CM UI JDBC(ZK)와 **다릅니다**. Lab 기본은 **`HIVE_SERVER2_CONNECT=zk`** (2181). `.env` 에 예전 `jdbc:...:10015/...` 한 줄이 남아 있으면 **Broken pipe** 가 날 수 있습니다 — `.env.example` ZK `HIVE_SERVER2_JDBC` 로 바꾸거나 해당 줄을 삭제하세요.
+
+HAProxy 동작 요약 (TCP SSL passthrough):
+
+| 구간 | 포트 | 설명 |
+|------|------|------|
+| Beeline → HAProxy | **10015** | `frontend hiveserver2_front` — SSL terminate at proxy |
+| HAProxy → HS2 | **10001** | `backend hiveserver2` — `ccycloud-1/3:10001` SSL |
+
+LB 로만 붙일 때 (`.env`: `HIVE_SERVER2_CONNECT=lb`, `HIVESERVER2_LOAD_BALANCER=ccycloud-1...:10015`):
 
 ```bash
-beeline -u "jdbc:hive2://ccycloud-1.jshin.root.comops.site:10015/default;auth=KERBEROS;principal=hive/ccycloud-1.jshin.root.comops.site@QE-INFRA-AD.CLOUDERA.COM;ssl=true;trustStoreType=jks;sslTrustStore=/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_truststore.jks;trustStorePassword=Prlcflcy2ZOMhtUqb0GFyd6FXKSTZfMpSU4n7kXtMaG"
+beeline -u "jdbc:hive2://ccycloud-1.jshin.root.comops.site:10015/default;auth=KERBEROS;principal=hive/_HOST@QE-INFRA-AD.CLOUDERA.COM;ssl=true;trustStoreType=jks;sslTrustStore=/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_truststore.jks;trustStorePassword=<.env>" \
+  -e "SELECT 1;"
 ```
+
+`principal=hive/ccycloud-1...@REALM` (LB 호스트 FQDN) 은 HS2 서비스 principal 과 어긋나 **Broken pipe** 가 나는 경우가 많습니다. CM 과 같이 **`hive/_HOST@REALM`** 을 쓰세요.
+
+**Load balancer 직접 접속** (ZK 대신 `:10015` — 위 HAProxy 절 참고):
 
 `trustStorePassword` 는 CM/agent **`cm-auto-global_truststore.jks`** 에 맞는 값입니다. `.env` 의 `HIVE_SSL_TRUSTSTORE_PASSWORD` 만 사용하고 채팅·히스토리에 노출하지 마세요.
 
@@ -175,12 +189,13 @@ beeline -u "jdbc:hive2://ccycloud-1.jshin.root.comops.site:10015/default;auth=KE
 
 | 항목 | `.env` / 값 |
 |------|-------------|
+| 연결 모드 | `HIVE_SERVER2_CONNECT=zk` (기본) 또는 `lb` |
 | ZK quorum | `HIVE_ZK_QUORUM=host1:2181,host2:2181,...` |
 | ZK namespace | `HIVE_ZK_NAMESPACE=hiveserver2` |
 | HS2 principal | `HIVE_SERVER2_PRINCIPAL=hive/_HOST@REALM` (CM 필드) |
 | SSL | `HIVE_SSL_TRUSTSTORE`, `HIVE_SSL_TRUSTSTORE_TYPE=jks`, `HIVE_SSL_TRUSTSTORE_PASSWORD` |
-| 전체 JDBC | `HIVE_SERVER2_JDBC` (있으면 우선, `{{CMF_CONF_DIR}}` 확장 지원) |
-| LB (대안) | `HIVESERVER2_LOAD_BALANCER=host:10015` |
+| 전체 JDBC | `HIVE_SERVER2_JDBC` (ZK URL; 옛 `:10015` 줄은 ZK 설정 시 자동 무시) |
+| LB (대안) | `HIVE_SERVER2_CONNECT=lb` + `HIVESERVER2_LOAD_BALANCER=host:10015` |
 
 Lab SQL 에 `USE iceberg_lab;` 가 있으므로 JDBC database 는 CM 과 같이 **비워도** 됩니다 (`HIVE_SERVER2_JDBC_DATABASE=`).
 

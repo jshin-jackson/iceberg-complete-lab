@@ -66,8 +66,13 @@ echo "$(mask_hive_jdbc_for_log "${JDBC}")"
 if [[ "${JDBC}" != *auth=KERBEROS* ]]; then
   echo "[WARN] URL에 auth=KERBEROS 없음 — principal만으로는 Broken pipe/reset 가능" >&2
 fi
-if [[ "${JDBC}" != *serviceDiscoveryMode=zooKeeper* && -z "${HIVE_ZK_QUORUM:-}" ]]; then
-  echo "[WARN] CM ZK JDBC(2181) 가 아닌 URL — .env HIVE_ZK_QUORUM / HIVE_SERVER2_JDBC 확인" >&2
+if [[ "${JDBC}" != *serviceDiscoveryMode=zooKeeper* ]]; then
+  if [[ -n "${HIVE_ZK_QUORUM:-}" && "${HIVE_SERVER2_CONNECT:-zk}" == "zk" ]]; then
+    echo "[ERROR] JDBC 가 ZK(2181) 가 아닙니다 — .env 의 옛 HIVE_SERVER2_JDBC(:10015) 를 제거/교체하세요." >&2
+    echo "        git pull 후 .env.example Hive 섹션 복사 또는 HIVE_SERVER2_CONNECT=lb" >&2
+  elif [[ "${JDBC}" == *":10015/"* || "${JDBC}" == *":10015;"* ]]; then
+    echo "[WARN] HAProxy :10015 LB URL — CM 기본은 ZK(2181). Broken pipe 시 principal=hive/_HOST@REALM 확인" >&2
+  fi
 fi
 
 echo ""
