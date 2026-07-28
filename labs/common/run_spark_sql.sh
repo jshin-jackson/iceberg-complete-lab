@@ -9,13 +9,19 @@ source "${SCRIPT_DIR}/spark_sql_env.sh"
 
 FILE="${1:?usage: run_spark_sql.sh file.sql}"
 
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/hadoop_env.sh"
+source_hadoop_environment
+
 MASTER="${SPARK_MASTER:-yarn}"
 EXTRA=()
 if [[ -n "${MASTER}" ]]; then
   EXTRA=(--master "${MASTER}")
 fi
 
-exec_spark_sql_file "${FILE}" "${EXTRA[@]}" \
+mapfile -t HADOOP_CONF_ARGS < <(hadoop_spark_extra_conf_args || true)
+
+exec_spark_sql_file "${FILE}" "${EXTRA[@]}" "${HADOOP_CONF_ARGS[@]}" \
   --conf "spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions" \
   --conf "spark.sql.defaultCatalog=${ICEBERG_CATALOG}" \
   --conf "spark.sql.catalog.${ICEBERG_CATALOG}=org.apache.iceberg.spark.SparkCatalog" \

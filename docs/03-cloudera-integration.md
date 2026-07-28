@@ -82,6 +82,40 @@ ls -l /opt/cloudera/parcels/CDH/lib/spark3/bin
 
 ---
 
+## HDFS HA (Standby NameNode WARN)
+
+Spark on YARN 은 Iceberg 데이터가 **Ozone(`ofs://`)** 에 있어도, 제출 시 **HDFS staging** (`copyFileToRemote` 등)을 씁니다. edge 에 CM **HDFS HA** 설정이 없으면 특정 호스트(`ccycloud-2:8020`)로 붙었다가 다음 WARN 이 날 수 있습니다.
+
+`Operation category READ is not supported in state standby`
+
+**대응 (Lab 스크립트):** [`run_spark_sql.sh`](../labs/common/run_spark_sql.sh) 가 [`hadoop_env.sh`](../labs/common/hadoop_env.sh) 로 **`HADOOP_CONF_DIR=/etc/hadoop/conf`** 를 export 합니다. Iceberg warehouse 는 계속 `.env` 의 `WAREHOUSE_OFS`(Ozone) 입니다.
+
+edge `.env`:
+
+```bash
+HADOOP_CONF_DIR=/etc/hadoop/conf
+YARN_CONF_DIR=/etc/hadoop/conf
+# nameservice URI (단일 NN host 가 아님)
+HDFS_DEFAULT_FS=hdfs://YOUR_NAMESERVICE
+```
+
+nameservice 확인:
+
+```bash
+hdfs getconf -confKey fs.defaultFS
+# 예: hdfs://jshincluster  (ccycloud-2:8020 같은 host:port 가 아님)
+```
+
+선택 — YARN staging 경로를 nameservice 로 고정:
+
+```bash
+SPARK_YARN_STAGING_DIR=hdfs://YOUR_NAMESERVICE/user/spark/.sparkStaging
+```
+
+**참고:** HA 설정이 맞으면 클라이언트가 **Active NN** 으로 failover 하며, WARN 1~2줄 후 성공하는 경우도 있습니다. job 이 실패하면 `HDFS_DEFAULT_FS` 가 **standby 호스트**를 가리키지 않는지 CM **HDFS → Instances** Active NameNode 와 대조하세요.
+
+---
+
 ## Hive Metastore (HMS)
 
 Iceberg 테이블 메타는 **Hive Metastore** Thrift API(`9083`)에 저장됩니다. 이 클러스터는 **HMS 2대**가 동시에 기동 중입니다.

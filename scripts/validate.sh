@@ -4,6 +4,9 @@ set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 # shellcheck disable=SC1091
 source "${ROOT}/labs/common/env.sh"
+# shellcheck disable=SC1091
+source "${ROOT}/labs/common/hadoop_env.sh"
+source_hadoop_environment
 
 echo "== Kerberos =="
 klist || { echo "kinit 실패"; exit 1; }
@@ -19,6 +22,17 @@ if SPARK_SQL="$(resolve_spark_sql_cmd 2>/dev/null)"; then
   fi
 else
   echo "[WARN] Spark SQL CLI 없음 — ./scripts/detect_spark_client.sh"
+fi
+
+echo "== HDFS (YARN staging / HA) =="
+if [[ -d "${HADOOP_CONF_DIR:-/etc/hadoop/conf}" ]]; then
+  echo "HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}"
+  hdfs getconf -confKey fs.defaultFS 2>/dev/null || echo "[WARN] hdfs getconf 실패 — kinit/HADOOP_CONF_DIR 확인"
+else
+  echo "[WARN] HADOOP_CONF_DIR 없음 — Standby NN WARN 가능"
+fi
+if [[ -n "${HDFS_DEFAULT_FS:-}" ]]; then
+  echo "HDFS_DEFAULT_FS(spark)=${HDFS_DEFAULT_FS}"
 fi
 
 echo "== Hive Metastore =="
