@@ -5,10 +5,19 @@ _jdbc_has_kerberos_params() {
   [[ "${1}" == *principal=* ]] || [[ "${1}" == *auth=KERBEROS* ]]
 }
 
+# principal 만 있고 auth=KERBEROS 가 없으면 Beeline 이 Broken pipe 로 끊기는 경우가 많음
+_jdbc_ensure_kerberos_auth() {
+  local u="$1"
+  if [[ "${u}" == *principal=* && "${u}" != *auth=KERBEROS* ]]; then
+    u="${u//;principal=/;auth=KERBEROS;principal=}"
+  fi
+  printf '%s' "${u}"
+}
+
 build_hive_jdbc() {
   if [[ -n "${HIVE_SERVER2_JDBC:-}" && "${HIVE_SERVER2_JDBC}" != *REPLACE* ]] \
     && _jdbc_has_kerberos_params "${HIVE_SERVER2_JDBC}"; then
-    printf '%s' "${HIVE_SERVER2_JDBC}"
+    _jdbc_ensure_kerberos_auth "${HIVE_SERVER2_JDBC}"
     return
   fi
 
@@ -45,7 +54,7 @@ build_hive_jdbc() {
     url="${url};${HIVE_SERVER2_JDBC_EXTRA}"
   fi
 
-  printf '%s' "${url}"
+  _jdbc_ensure_kerberos_auth "${url}"
 }
 
 mask_hive_jdbc_for_log() {

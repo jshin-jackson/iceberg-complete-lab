@@ -147,18 +147,21 @@ CM **hiveserver2_load_balancer**:
 
 ### 수동 접속 예
 
-**Kerberos** (Beeline help 형식 — `principal` 은 HS2 **호스트 FQDN**과 맞춤):
+**Kerberos + SSL** (CDP edge — `auth=KERBEROS` 를 빼면 **Broken pipe** 가 나는 경우가 많음):
 
 ```bash
 kinit -kt /cdep/keytabs/systest.keytab systest
-beeline -u "jdbc:hive2://ccycloud-1.jshin.root.comops.site:10015/default;principal=hive/ccycloud-1.jshin.root.comops.site@QE-INFRA-AD.CLOUDERA.COM"
+klist
+beeline -u "jdbc:hive2://ccycloud-1.jshin.root.comops.site:10015/default;auth=KERBEROS;principal=hive/ccycloud-1.jshin.root.comops.site@QE-INFRA-AD.CLOUDERA.COM;ssl=true;sslTrustStore=/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_truststore.jks;trustStorePassword=<CM truststore 비밀번호>"
 ```
 
-**SSL** (truststore 경로·비밀번호는 CM/agent 쪽 설정 확인):
+**HTTP transport** (CM `hive.server2.transport.mode=http` 일 때 `transportMode=http` 추가):
 
 ```bash
-beeline -u "jdbc:hive2://ccycloud-1.jshin.root.comops.site:10015/default;ssl=true;sslTrustStore=/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_truststore.jks;trustStorePassword=changeit;principal=hive/ccycloud-1.jshin.root.comops.site@QE-INFRA-AD.CLOUDERA.COM"
+beeline -u "jdbc:hive2://ccycloud-1.jshin.root.comops.site:10015/default;auth=KERBEROS;principal=hive/ccycloud-1.jshin.root.comops.site@QE-INFRA-AD.CLOUDERA.COM;transportMode=http;httpPath=cliservice;ssl=true;sslTrustStore=/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_truststore.jks;trustStorePassword=<CM truststore 비밀번호>"
 ```
+
+`trustStorePassword` 는 CM/agent **`cm-auto-global_truststore.jks`** 에 맞는 값입니다 (`changeit` 이 아닐 수 있음). 비밀번호는 `.env` 의 `HIVE_SSL_TRUSTSTORE_PASSWORD` 에만 두고 채팅·쉘 히스토리에 노출하지 마세요.
 
 Kerberos + SSL을 **한 URL**에 넣습니다. Beeline 로그에 `jdbc:hive2://host:10015/default` **만** 보이면 `.env` 의 `HIVE_SERVER2_JDBC` 가 **principal/ssl 없이 짧게** 설정된 것입니다 — [`.env.example`](../.env.example) 전체 URL로 맞추거나 `HIVE_SERVER2_JDBC` 를 지우고 `HIVESERVER2_*` 로 조립하게 하세요.
 
@@ -168,11 +171,14 @@ Kerberos + SSL을 **한 URL**에 넣습니다. Beeline 로그에 `jdbc:hive2://h
 ./scripts/test_beeline_connect.sh
 ```
 
-**Connection reset** 이고 SSL·principal 을 넣었을 때:
+**Connection reset / Broken pipe** (SSL·principal 을 넣었을 때):
 
+- **`auth=KERBEROS`** 가 URL에 있는지 (`principal=` 만으로는 부족)
+- `kinit` + `klist` — ticket 없거나 만료
 - CM **HiveServer2 → Configuration** 에서 transport 가 **HTTP** 이면 `.env` 에  
   `HIVE_SERVER2_TRANSPORT_MODE=http` · `HIVE_SERVER2_HTTP_PATH=cliservice` (CM 값과 동일)
 - **Kerberos REALM** 이 `HIVE_SERVER2_PRINCIPAL` 의 `@REALM` 과 `klist` 와 일치하는지 확인 (Cloudera CM principal 필드 복사)
+- **trustStorePassword** 가 CM agent truststore 와 일치하는지 (`changeit` 고정 아님)
 
 | 항목 | `.env` / 값 |
 |------|-------------|
