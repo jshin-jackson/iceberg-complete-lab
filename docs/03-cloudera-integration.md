@@ -160,7 +160,19 @@ beeline -u "jdbc:hive2://ccycloud-1.jshin.root.comops.site:10015/default;princip
 beeline -u "jdbc:hive2://ccycloud-1.jshin.root.comops.site:10015/default;ssl=true;sslTrustStore=/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_truststore.jks;trustStorePassword=changeit;principal=hive/ccycloud-1.jshin.root.comops.site@QE-INFRA-AD.CLOUDERA.COM"
 ```
 
-Kerberos + SSL을 **한 URL**에 넣는 것이 CDP edge에서 흔한 패턴입니다. Lab `.env`의 `HIVE_SERVER2_JDBC` 또는 `HIVESERVER2_*` / `HIVE_SSL_*` 가 [`run_hive_sql.sh`](../labs/common/run_hive_sql.sh)에서 조립됩니다.
+Kerberos + SSL을 **한 URL**에 넣습니다. Beeline 로그에 `jdbc:hive2://host:10015/default` **만** 보이면 `.env` 의 `HIVE_SERVER2_JDBC` 가 **principal/ssl 없이 짧게** 설정된 것입니다 — [`.env.example`](../.env.example) 전체 URL로 맞추거나 `HIVE_SERVER2_JDBC` 를 지우고 `HIVESERVER2_*` 로 조립하게 하세요.
+
+진단:
+
+```bash
+./scripts/test_beeline_connect.sh
+```
+
+**Connection reset** 이고 SSL·principal 을 넣었을 때:
+
+- CM **HiveServer2 → Configuration** 에서 transport 가 **HTTP** 이면 `.env` 에  
+  `HIVE_SERVER2_TRANSPORT_MODE=http` · `HIVE_SERVER2_HTTP_PATH=cliservice` (CM 값과 동일)
+- **Kerberos REALM** 이 `HIVE_SERVER2_PRINCIPAL` 의 `@REALM` 과 `klist` 와 일치하는지 확인 (Cloudera CM principal 필드 복사)
 
 | 항목 | `.env` / 값 |
 |------|-------------|

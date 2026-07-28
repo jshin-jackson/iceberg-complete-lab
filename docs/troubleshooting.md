@@ -2,7 +2,7 @@
 
 1. **kinit 실패** — keytab 경로 `/cdep/keytabs/systest.keytab`, principal 대소문자 확인
 2. **ofs 접근 거부 / warehouse 없음** — volume·bucket·warehouse: [`04-ozone-storage.md`](04-ozone-storage.md) §1; **Ranger 거부** — 같은 문서 **§3** (`cm_ozone` Audits, user·key prefix), `./scripts/setup_ozone_storage.sh --check`
-3. **Beeline 연결 실패** — `HIVESERVER2_LOAD_BALANCER` **`host:10015`**, `HIVE_SERVER2_PRINCIPAL=hive/<동일 FQDN>@REALM`, SSL truststore: [`03-cloudera-integration.md`](03-cloudera-integration.md) Beeline 절; `kinit` 선행
+3. **Beeline Connection reset (10015)** — `kinit` 후 `./scripts/test_beeline_connect.sh`; `.env` JDBC에 **`auth=KERBEROS;principal=...;ssl=true;sslTrustStore=...`** 필수 (host만 있으면 reset); REALM/CM HS2 principal 일치; HTTP면 `HIVE_SERVER2_TRANSPORT_MODE=http`
 4. **Impala 연결 실패** — `.env`: coordinator **`host:25003`** (21000 아님), `IMPALA_SSL=true`, `IMPALA_CA_CERT` (CM `cm-auto-global_cacerts.pem`), `kinit` 후 [`03-cloudera-integration.md`](03-cloudera-integration.md) Impala 절
 5. **Impala 테이블 없음** — `INVALIDATE METADATA` / `REFRESH db.table`
 6. **Spark catalog not found** — `ICEBERG_CATALOG=hive_prod`, extensions 설정

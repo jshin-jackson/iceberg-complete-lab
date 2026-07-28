@@ -4,31 +4,22 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "${SCRIPT_DIR}/env.sh"
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/hadoop_env.sh"
+source_hadoop_environment
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/hive_jdbc.sh"
+
 FILE="${1:?usage: run_hive_sql.sh file.sql}"
 
-build_hive_jdbc() {
-  if [[ -n "${HIVE_SERVER2_JDBC:-}" && "${HIVE_SERVER2_JDBC}" != *REPLACE* ]]; then
-    printf '%s' "${HIVE_SERVER2_JDBC}"
-    return
-  fi
-  local host port db principal url ts
-  if [[ -n "${HIVESERVER2_LOAD_BALANCER:-}" ]]; then
-    host="${HIVESERVER2_LOAD_BALANCER%%:*}"
-    port="${HIVESERVER2_LOAD_BALANCER##*:}"
-  else
-    host="${HIVESERVER2_HOST:?HIVESERVER2_HOST or HIVESERVER2_LOAD_BALANCER or HIVE_SERVER2_JDBC}"
-    port="${HIVESERVER2_PORT:-10015}"
-  fi
-  db="${HIVE_SERVER2_JDBC_DATABASE:-default}"
-  principal="${HIVE_SERVER2_PRINCIPAL:?HIVE_SERVER2_PRINCIPAL 설정 (.env)}"
-  url="jdbc:hive2://${host}:${port}/${db};principal=${principal}"
-  if [[ "${HIVE_SERVER2_SSL:-true}" == "true" ]]; then
-    ts="${HIVE_SSL_TRUSTSTORE:-/var/lib/cloudera-scm-agent/agent-cert/cm-auto-global_truststore.jks}"
-    pwd="${HIVE_SSL_TRUSTSTORE_PASSWORD:-changeit}"
-    url="${url};ssl=true;sslTrustStore=${ts};trustStorePassword=${pwd}"
-  fi
-  printf '%s' "${url}"
-}
+if ! klist -s 2>/dev/null; then
+  echo "[ERROR] Kerberos ticket 없음. kinit 후 beeline 실행." >&2
+  exit 1
+fi
 
 JDBC="$(build_hive_jdbc)"
-beeline -u "${JDBC}" -f "${FILE}"
+if [[ "${HIVE_JDBC_DEBUG:-false}" == "true" ]]; then
+  echo "[DEBUG] JDBC: $(mask_hive_jdbc_for_log "${JDBC}")" >&2
+fi
+
+exec beeline -u "${JDBC}" --silent=false --showHeader=true -f "${FILE}"
