@@ -109,6 +109,15 @@ source_spark_environment() {
   shopt -u nullglob 2>/dev/null || true
 
   _export_cdh_spark_home || true
+
+  # parcel spark-env 가 SPARK_CONF_DIR 을 parcel 로 덮어쓸 수 있음 — CM /etc 우선
+  if [[ -d /etc/spark3/conf.cloudera.SPARK3_ON_YARN-1 ]]; then
+    export SPARK_CONF_DIR=/etc/spark3/conf.cloudera.SPARK3_ON_YARN-1
+  elif [[ -z "${SPARK_CONF_DIR:-}" ]]; then
+    local picked
+    picked="$(_pick_spark_conf_dir)" && export SPARK_CONF_DIR="${picked}"
+  fi
+
   export SPARK_ENV_SOURCED=1
   return 0
 }
@@ -135,22 +144,18 @@ _spark_submit_bin() {
   return 1
 }
 
-# CDP client 에 SparkSQLCLIDriver 가 classpath 에 없을 때 jar 디렉터리 전체 추가
+# JVM classpath 디렉터리 와일드카드 (jar 개별 나열 시 ARG_MAX 초과)
 _build_spark_sql_classpath() {
-  local cp="" j dir
+  local cp="" dir
+  shopt -s nullglob
   for dir in \
     "${SPARK_HOME}/jars" \
     /opt/cloudera/parcels/CDH/lib/hive/lib \
-    /opt/cloudera/parcels/CDH-*/lib/hive/lib \
-    /opt/cloudera/parcels/CDH/lib/spark3/jars \
-    /opt/cloudera/parcels/CDH-*/lib/spark3/jars; do
+    /opt/cloudera/parcels/CDH-*/lib/hive/lib; do
     [[ -d "${dir}" ]] || continue
-    shopt -s nullglob
-    for j in "${dir}"/*.jar; do
-      cp="${cp}:${j}"
-    done
-    shopt -u nullglob 2>/dev/null || true
+    cp="${cp}:${dir}/*"
   done
+  shopt -u nullglob 2>/dev/null || true
   echo "${cp#:}"
 }
 
@@ -208,18 +213,14 @@ _exec_spark_submit_pyspark() {
   local file="$1"
   shift
   local sql_args=("$@")
-  local submit cp
+  local submit
   submit="$(_spark_submit_bin)" || return 1
-  cp="$(_build_spark_sql_classpath)"
-  local extra=()
-  if [[ -n "${cp}" ]]; then
-    extra+=(--driver-class-path "${cp}" --conf "spark.driver.extraClassPath=${cp}")
-  fi
   if [[ ! -f "${SPARK_SQL_RUNNER_PY}" ]]; then
     return 1
   fi
-  echo "[INFO] spark-submit PySpark runner (SparkSQLCLIDriver unavailable)" >&2
-  exec "${submit}" "${extra[@]}" "${sql_args[@]}" "${SPARK_SQL_RUNNER_PY}" "${file}"
+  echo "[INFO] spark-submit PySpark SQL runner (${SPARK_SQL_RUNNER_PY})" >&2
+  # CDP spark-submit 기본 classpath 사용 (driver-class-path 에 jar 전체 나열 금지)
+  exec "${submit}" "${sql_args[@]}" "${SPARK_SQL_RUNNER_PY}" "${file}"
 }
 
 exec_spark_sql_file() {
@@ -249,12 +250,18 @@ exec_spark_sql_file() {
     exec "${path}" "${sql_args[@]}" -f "${file}"
   done < <(_spark_sql_bin_dirs)
 
-  if _run_spark_submit_java_cli "${file}" "${sql_args[@]}"; then
-    exit 0
+  # CDH edge: spark-sql 없음 — pyspark 가 기본 (java CLI 는 SPARK_SQL_TRY_JAVA_CLI=true 일 때만)
+  if [[ "${SPARK_SQL_RUNNER:-pyspark}" == "pyspark" ]]; then
+    _exec_spark_submit_pyspark "${file}" "${sql_args[@]}"
   fi
-  echo "[WARN] SparkSQLCLIDriver failed — trying PySpark SQL runner" >&2
 
-  _exec_spark_submit_pyspark "${file}" "${sql_args[@]}"
+  if [[ "${SPARK_SQL_TRY_JAVA_CLI:-false}" == "true" ]]; then
+    if _run_spark_submit_java_cli "${file}" "${sql_args[@]}"; then
+      exit 0
+    fi
+    echo "[WARN] SparkSQLCLIDriver failed — trying PySpark SQL runner" >&2
+    _exec_spark_submit_pyspark "${file}" "${sql_args[@]}"
+  fi
 
   echo "[ERROR] Spark SQL 실행 실패 (SparkSQLCLIDriver 및 PySpark runner)" >&2
   echo "  SPARK_CONF_DIR=${SPARK_CONF_DIR:-unset} SPARK_HOME=${SPARK_HOME:-unset}" >&2
